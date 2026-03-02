@@ -4,7 +4,6 @@ import { Card } from '@/app/components/globalComponents';
 import { JobCard } from '@/app/components/JobCard';
 import { BarChart3, Bookmark, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mockJobs } from '@/data/mockData';
-import axios from 'axios';
 
 function NextArrow(props: any) {
   const { onClick } = props;

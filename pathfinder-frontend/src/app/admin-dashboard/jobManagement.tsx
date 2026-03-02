@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 // Updated imports to use the single widgets file
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Label, Textarea, Badge, Tabs, TabsContent, TabsList, TabsTrigger, Alert, AlertDescription } from '@/app/components/globalComponents';
 import { Upload, RefreshCw, FileSpreadsheet, Server, CheckCircle2, AlertCircle, Lightbulb, Plus, ExternalLink } from 'lucide-react';
-import axios from 'axios';
+import fastAxiosInstance from '@/axiosConfig/axiosfig';
 
 interface JobSource {
   id: string;
@@ -66,7 +66,7 @@ export default function AdminJobManagement() {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await axios.post('http://127.0.0.1:8000/api/upload-jobs', formData); // invoke the upload endpoint by sending the POST req
+      const response = await fastAxiosInstance.post('/api/upload-jobs', formData); // invoke the upload endpoint by sending the POST req
       setUploadResult(response.data);
       setUploadStatus('success');
     } catch (error) {
