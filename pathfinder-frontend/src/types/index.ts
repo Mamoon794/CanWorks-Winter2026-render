@@ -83,7 +83,7 @@ export interface JobPosting {
     application_deadline: string | null;
     link_to_posting: string | null;
     mode: 'Remote' | 'On Site' | 'Hybrid';
-    job_type: 'internship' | 'coop' | 'new-grad';
+    job_type: 'intern' | 'coop' | 'new-grad' | 'part time' | 'full time';
     target_audience: 'Student' | 'New Graduate';
     description: string | null;
     skills: string[];
