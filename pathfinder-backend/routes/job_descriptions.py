@@ -42,8 +42,8 @@ def _to_response(job: JobDescription) -> JobDescriptionResponse:
         industry=job.industry,
         job_function=job.job_function,
         seniority_level=job.seniority_level,
-        employement_type=job.employment_type,
-        location_type=job.location_type
+        employment_type=job.employment_type,
+        location_type=job.location_type,
         location_city=job.location_city,
         location_province=job.location_province,
         job_description=job.job_description,
@@ -130,7 +130,7 @@ def list_job_descriptions(
     query = db.query(JobDescription).filter(JobDescription.user_id == user_id)
     if include_deleted:
         # History tab: show deleted jobs
-        query = query.filter(JobDescription.delete_at.isnot(None))
+        query = query.filter(JobDescription.deleted_at.isnot(None))
     elif include_expired:
         # History tab: show expired jobs
         today = date.today()

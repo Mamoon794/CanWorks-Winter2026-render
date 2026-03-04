@@ -11,6 +11,10 @@ from schemas import JobPostingResponse, JobPostingListResponse, UploadResponse
 from excel_parser import parse_excel_file
 from fastapi import HTTPException
 
+from routes.job_descriptions import router as job_descriptions_router
+from routes.templates import router as templates_router
+from routes.skills import router as skills_router
+
 app = FastAPI()
 """
 Browsers block requests between different origins by default. 
@@ -28,6 +32,11 @@ app.add_middleware(
 # Tell SQLAlchemy to look at all classes that inherit from Base (JobPosting model in this case)
 # and create the table in the database if it doesn't already exist
 Base.metadata.create_all(bind=engine)
+
+# include all the routers
+app.include_router(job_descriptions_router)
+app.include_router(templates_router)
+app.include_router(skills_router)
 
 # Upload endpoint
 # register a POST route
