@@ -109,13 +109,16 @@ export interface SavedSearch {
 }
 
 export interface CareerInsight {
-    id: string;
+    id: number;
     title: string;
     category: string;
     excerpt: string;
-    imageUrl: string;
+    content?: string;
+    articleLink?: string;
+    imageUrl?: string;
     readTime: string;
-    url: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface EmployerPermissions {

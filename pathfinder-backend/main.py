@@ -6,15 +6,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_ # SQLAlchemy OR operator for combining search conditions
 from database import engine, get_db, Base
-from models import JobPosting, SavedJob
+from models import JobPosting, SavedJob, CareerInsight
 from schemas import JobPostingResponse, JobPostingListResponse, UploadResponse
 from schemas import SavedJobCreate, SavedJobResponse, SavedJobWithDetails
+from schemas import CareerInsightCreate, CareerInsightsResponse, ImageUploadResponse
 from excel_parser import parse_excel_file
 from fastapi import HTTPException
 
 from routes.job_descriptions import router as job_descriptions_router
 from routes.templates import router as templates_router
 from routes.skills import router as skills_router
+from upload_images import upload_career_images
 
 from jwt_auth import verify_jwt
 
@@ -208,3 +210,40 @@ def get_saved_jobs(
     ).all()
 
     return saved_jobs
+
+
+@app.post("/api/create-career-insights", response_model=CareerInsightsResponse)
+def create_career_insights(
+    payload: CareerInsightCreate,
+    db: Session = Depends(get_db)
+):
+    career_insight = CareerInsight(
+        title=payload.title,
+        category=payload.category,
+        excerpt=payload.excerpt,
+        content=payload.content,
+        articleLink=payload.articleLink,
+        imageUrl=payload.imageUrl,
+        readTime=payload.readTime,
+    )
+
+    db.add(career_insight)
+    db.commit()
+    db.refresh(career_insight)
+
+    return career_insight
+
+
+@app.post("/api/upload-career-image", response_model=ImageUploadResponse)
+async def upload_career_image(file: UploadFile = File(...)):
+    result = await upload_career_images(file)
+    return ImageUploadResponse(
+        url=result["url"],
+        filename=result["filename"]
+    )
+
+
+@app.get("/api/career-insights", response_model=list[CareerInsightsResponse])
+def get_career_insights(db: Session = Depends(get_db)):
+    insights = db.query(CareerInsight).order_by(CareerInsight.created_at.desc()).all()
+    return insights

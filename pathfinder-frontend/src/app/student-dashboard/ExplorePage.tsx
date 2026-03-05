@@ -96,7 +96,7 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
         }
         if (filters.keywords) {
         const keywords = filters.keywords.toLowerCase().split(',').map(k => k.trim());
-        const jobText = `${job.title} ${job.description} ${job.skills?.join(' ')}`.toLowerCase();
+        const jobText = `${job.title} ${job.employer} ${job.requirements || ''} ${job.responsibilities || ''} ${job.skills?.join(' ')}`.toLowerCase();
         if (!keywords.some(keyword => jobText.includes(keyword))) return false;
         }
         return true;
