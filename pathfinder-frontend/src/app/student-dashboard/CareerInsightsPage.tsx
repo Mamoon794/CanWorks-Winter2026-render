@@ -1,9 +1,26 @@
 import React from 'react';
 import { Card, Badge } from '@/app/components/globalComponents';
 import { Clock, ExternalLink } from 'lucide-react';
-import { careerInsights } from '@/data/mockData';
+import fastAxiosInstance from '@/axiosConfig/axiosfig';
+import type { CareerInsight} from '@/types';
+
 
 export function CareerInsightsPage() {
+    const [careerInsights, setCareerInsights] = React.useState<CareerInsight[]>([]);
+
+    React.useEffect(() => {
+        const fetchCareerInsights = async () => {
+            try {
+                const response = await fastAxiosInstance.get('/api/career-insights');
+                setCareerInsights(response.data);
+            } catch (error) {
+                console.error('Error fetching career insights:', error);
+            }
+        }
+        fetchCareerInsights();
+    }, []);
+
+
     const categories = Array.from(new Set(careerInsights.map(i => i.category)));
 
     return (

@@ -221,3 +221,35 @@ class JobDescriptionListResponse(BaseModel):
     page: int
     page_size: int
 
+
+class CareerInsightCreate(BaseModel):
+    title: str
+    category: str
+    excerpt: Optional[str] = None
+    content: Optional[str] = None
+    articleLink: Optional[str] = None
+    imageUrl: Optional[str] = None
+    readTime: Optional[str] = None
+
+
+class ImageUploadResponse(BaseModel):
+    url: str
+    filename: str
+
+
+class CareerInsightsResponse(BaseModel):
+    id: int
+    title: str
+    category: str
+    excerpt: Optional[str] = None
+    content: Optional[str] = None
+    articleLink: Optional[str] = None
+    imageUrl: Optional[str] = None
+    readTime: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+

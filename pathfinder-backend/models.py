@@ -133,3 +133,18 @@ class JobDescriptionSkill(Base): # Relationship table connecting Skill and JobDe
     job_description = relationship("JobDescription", back_populates="skills")
     skill = relationship("Skill")
 
+
+class CareerInsight(Base):
+    __tablename__ = "career_insights"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    excerpt = Column(Text, nullable=True)
+    content = Column(Text, nullable=True)
+    articleLink = Column(String, nullable=True)
+    imageUrl = Column(String, nullable=True)
+    readTime = Column(String, nullable=True)
+    status = Column(String, default="published")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
