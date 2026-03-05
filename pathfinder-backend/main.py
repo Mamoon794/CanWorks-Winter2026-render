@@ -3,17 +3,20 @@ from fastapi import UploadFile, File # handle file uploads
 from fastapi import Depends
 from fastapi import Query # Define query parameters with defaults and validation 
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_ # SQLAlchemy OR operator for combining search conditions
 from database import engine, get_db, Base
-from models import JobPosting
+from models import JobPosting, SavedJob
 from schemas import JobPostingResponse, JobPostingListResponse, UploadResponse
+from schemas import SavedJobCreate, SavedJobResponse, SavedJobWithDetails
 from excel_parser import parse_excel_file
 from fastapi import HTTPException
 
 from routes.job_descriptions import router as job_descriptions_router
 from routes.templates import router as templates_router
 from routes.skills import router as skills_router
+
+from jwt_auth import verify_jwt
 
 app = FastAPI()
 """
@@ -23,10 +26,10 @@ Middleware allows the communication between the frontend and the backend
 """
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (or specify specific URLs)
+    allow_origins=["*"],  # Specify frontend origins
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],  # Explicitly allow needed methods
+    allow_headers=["*"],  # Allow all headers including Authorization
 )
 
 # Tell SQLAlchemy to look at all classes that inherit from Base (JobPosting model in this case)
@@ -124,3 +127,84 @@ def get_job(job_id: int, db: Session = Depends(get_db)):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return job
+
+# -----------------------------
+# POST - Save Job
+# -----------------------------
+@app.post("/api/saved-jobs", response_model=SavedJobResponse)
+def save_job(
+    payload: SavedJobCreate,
+    user=Depends(verify_jwt),
+    db: Session = Depends(get_db)
+):
+    user_id = user["sub"]  # extracted from JWT
+
+    job = db.query(JobPosting).filter(
+        JobPosting.id == payload.job_id
+    ).first()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    existing = db.query(SavedJob).filter(
+        SavedJob.user_id == user_id,
+        SavedJob.job_id == payload.job_id
+    ).first()
+
+    if existing:
+        return existing
+
+    saved = SavedJob(
+        user_id=user_id,
+        job_id=payload.job_id
+    )
+
+    db.add(saved)
+    db.commit()
+    db.refresh(saved)
+
+    return saved
+
+
+# -----------------------------
+# DELETE - Unsave Job
+# -----------------------------
+@app.delete("/api/saved-jobs/{job_id}")
+def unsave_job(
+    job_id: int,
+    user=Depends(verify_jwt),
+    db: Session = Depends(get_db)
+):
+    user_id = user["sub"]
+
+    saved = db.query(SavedJob).filter(
+        SavedJob.user_id == user_id,
+        SavedJob.job_id == job_id
+    ).first()
+
+    if not saved:
+        raise HTTPException(status_code=404, detail="Saved job not found")
+
+    db.delete(saved)
+    db.commit()
+
+    return {"message": "Removed from saved jobs"}
+
+
+# -----------------------------
+# GET - Fetch Saved Jobs
+# -----------------------------
+@app.get("/api/saved-jobs", response_model=list[SavedJobWithDetails])
+def get_saved_jobs(
+    user=Depends(verify_jwt),
+    db: Session = Depends(get_db)
+):
+    user_id = user["sub"]
+
+    saved_jobs = db.query(SavedJob).options(
+        joinedload(SavedJob.job)
+    ).filter(
+        SavedJob.user_id == user_id
+    ).all()
+
+    return saved_jobs

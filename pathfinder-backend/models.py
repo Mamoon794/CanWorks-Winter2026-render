@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, date, timezone
-from sqlalchemy import Column, Integer, String, Text, Boolean, Float, Date, DateTime, JSON, Numeric, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, Float, Date, DateTime, JSON, Numeric, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
@@ -43,6 +43,29 @@ class JobPosting(Base): # jobs uploaded by admins via Excel files
     # without lambda, the function datetime.now is only invoked once when the table is created, making all entries have the same created_at time
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda:datetime.now(timezone.utc))
+
+
+class SavedJob(Base):
+    __tablename__ = "saved_jobs"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Supabase auth user id (JWT "sub")
+    user_id = Column(String, nullable=False, index=True)
+
+    # Foreign key to your existing job_postings table
+    job_id = Column(Integer, ForeignKey("job_postings.id", ondelete="CASCADE"), nullable=False)
+
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Prevent duplicate saves
+    __table_args__ = (
+        UniqueConstraint("user_id", "job_id", name="unique_user_job"),
+    )
+
+    # Lets you access saved_job.job
+    job = relationship("JobPosting")
+
+
 
 class Template(Base):
     __tablename__ = "templates"
@@ -109,5 +132,4 @@ class JobDescriptionSkill(Base): # Relationship table connecting Skill and JobDe
     created_at = Column(DateTime, default=lambda:datetime.now(timezone.utc))
     job_description = relationship("JobDescription", back_populates="skills")
     skill = relationship("Skill")
-
 

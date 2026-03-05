@@ -4,6 +4,7 @@ import { Card, CheckBox, Label, Input, Button } from '@/app/components/globalCom
 import { Search, Bell, BellRing, Mail } from 'lucide-react';
 import type { SavedSearch, JobPosting} from '@/types';
 import JobDetailsSidebar from '@/app/components/JobDetailsSidebar'; // <--- added import
+import { useSavedJobs } from "@/app/hooks/useSavedJobs";
 
 interface ExplorePageProps {
     jobs: JobPosting[];
@@ -11,7 +12,7 @@ interface ExplorePageProps {
 }
 
 export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
-    const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
+    const { savedJobs, toggleSave } = useSavedJobs();
     const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
     const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null); // <--- added state
     const pageSize = 10;
@@ -25,15 +26,6 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
         paymentTypes: [] as ('paid' | 'unpaid')[],
     });
 
-    useEffect(() => {
-        const stored = localStorage.getItem('savedJobs');
-        if (stored) setSavedJobs(new Set(JSON.parse(stored)));
-    }, []);
-
-    useEffect(() => {
-        const stored = localStorage.getItem('savedSearches');
-        if (stored) setSavedSearches(JSON.parse(stored));
-    }, []);
 
     useEffect(() => {
         localStorage.setItem('savedJobs', JSON.stringify(Array.from(savedJobs)));
@@ -43,17 +35,6 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
         localStorage.setItem('savedSearches', JSON.stringify(savedSearches));
     }, [savedSearches]);
 
-    const toggleSave = (jobId: string) => {
-        setSavedJobs(prev => {
-        const next = new Set(prev);
-        if (next.has(jobId)) {
-            next.delete(jobId);
-        } else {
-            next.add(jobId);
-        }
-        return next;
-        });
-    };
 
     const toggleType = (type: 'intern' | 'coop' | 'new-grad' | 'part time' | 'full time') => {
         setFilters(prev => ({
@@ -318,7 +299,7 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
                 <div key={job.id} className="cursor-pointer" onClick={() => setSelectedJob(job)}>
                     <JobCard
                         job={job}
-                        isSaved={savedJobs.has(job.id)}
+                        isSaved={savedJobs.has(job.id.toString())}
                         onToggleSave={toggleSave}
                     />
                 </div>

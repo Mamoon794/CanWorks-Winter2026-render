@@ -4,6 +4,7 @@ import { Card } from '@/app/components/globalComponents';
 import { JobCard } from '@/app/components/JobCard';
 import { BarChart3, Bookmark, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mockJobs } from '@/data/mockData';
+import { useSavedJobs } from '@/app/hooks/useSavedJobs';
 
 function NextArrow(props: any) {
   const { onClick } = props;
@@ -30,21 +31,28 @@ function PrevArrow(props: any) {
 }
 
 export function HomePage({ totalJobs = 0 }: { totalJobs: number }) {
-    const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
+    const { savedJobDetails, toggleSave, loading } = useSavedJobs();
 
+    if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <p className="text-center text-gray-500">Loading saved jobs...</p>
+      </div>
+    );
+  }
 
-    useEffect(() => {
-        localStorage.setItem('savedJobs', JSON.stringify(Array.from(savedJobs)));
-    }, [savedJobs]);
+    // useEffect(() => {
+    //     localStorage.setItem('savedJobs', JSON.stringify(Array.from(savedJobs)));
+    // }, [savedJobs]);
 
-    const toggleSave = (jobId: string) => {
-        setSavedJobs(prev => {
-        const next = new Set(prev);
-        if (next.has(jobId)) next.delete(jobId);
-        else next.add(jobId);
-        return next;
-        });
-    };
+    // const toggleSave = (jobId: string) => {
+    //     setSavedJobs(prev => {
+    //     const next = new Set(prev);
+    //     if (next.has(jobId)) next.delete(jobId);
+    //     else next.add(jobId);
+    //     return next;
+    //     });
+    // };
 
     const recommendedJobs = mockJobs.slice(0, 4);
     const wildcardJobs = mockJobs.slice(4);
@@ -80,7 +88,7 @@ export function HomePage({ totalJobs = 0 }: { totalJobs: number }) {
                 </div>
                 <h3 className="text-sm text-gray-600">Saved Jobs</h3>
             </div>
-            <p className="text-3xl">{savedJobs.size}</p>
+            <p className="text-3xl">{savedJobDetails?.length || 0}</p>
             <p className="text-sm text-gray-500 mt-1">Ready to apply</p>
             </Card>
 
@@ -95,7 +103,26 @@ export function HomePage({ totalJobs = 0 }: { totalJobs: number }) {
             <p className="text-sm text-gray-500 mt-1">Followed searches</p>
             </Card>
         </div>
+        
+        <section>
+        <h2 className="text-2xl mb-6">Saved Jobs</h2>
 
+        {savedJobDetails.length === 0 ? (
+          <p className="text-gray-600">You have no saved jobs right now.</p>
+        ) : (
+          <Slider {...carouselSettings}>
+            {savedJobDetails.map(job => (
+              <JobCard
+                key={job.id}
+                job={job}
+                isSaved={true}
+                onToggleSave={toggleSave}
+              />
+            ))}
+          </Slider>
+        )}
+      </section>
+      
         {/* Recommended For You Carousel */}
         <section>
             <h2 className="text-2xl mb-6">Recommended For You</h2>
@@ -105,7 +132,7 @@ export function HomePage({ totalJobs = 0 }: { totalJobs: number }) {
                 <div key={job.id} className="px-2">
                     <JobCard
                     job={job}
-                    isSaved={savedJobs.has(job.id)}
+                    isSaved={savedJobDetails?.some(j => j.id === job.id) || false}
                     onToggleSave={toggleSave}
                     />
                 </div>
@@ -126,7 +153,7 @@ export function HomePage({ totalJobs = 0 }: { totalJobs: number }) {
                 <div key={job.id} className="px-2">
                     <JobCard
                     job={job}
-                    isSaved={savedJobs.has(job.id)}
+                    isSaved={savedJobDetails?.some(j => j.id === job.id) || false}
                     onToggleSave={toggleSave}
                     />
                 </div>
