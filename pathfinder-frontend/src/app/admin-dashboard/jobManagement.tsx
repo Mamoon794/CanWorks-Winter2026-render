@@ -15,26 +15,20 @@ interface JobSource {
   status: 'active' | 'error' | 'pending';
 }
 
-interface SFTPConfig {
-  host: string;
-  port: string;
-  username: string;
-  password: string;
-  path: string;
-}
-
 interface CareerInsightDraft {
   title: string;
   category: string;
   excerpt: string;
   content: string;
+  articleLink: string;
+  image?: File | null;
 }
 
 export default function AdminJobManagement() {
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [sftpConfig, setSftpConfig] = useState<SFTPConfig>({ host: '', port: '22', username: '', password: '', path: '/uploads/jobs' });
-  const [insightDraft, setInsightDraft] = useState<CareerInsightDraft>({ title: '', category: '', excerpt: '', content: '' });
+  const [insightDraft, setInsightDraft] = useState<CareerInsightDraft>({ title: '', category: '', excerpt: '', content: '', articleLink: '', image: null });
+  const [contentType, setContentType] = useState<'content' | 'link'>('content');
   const [publishStatus, setPublishStatus] = useState<'idle' | 'publishing' | 'success'>('idle');
   const [uploadResult, setUploadResult] = useState<{jobs_added: number; jobs_skipped: number; errors: string[]} | null>(null); // store response from backend to indicate how many jobs were added, skipped
 
@@ -94,15 +88,44 @@ export default function AdminJobManagement() {
     }, 2000);
   };
 
-  const handlePublishInsight = () => {
+  const handlePublishInsight = async () => {
     setPublishStatus('publishing');
-    setTimeout(() => {
-      setPublishStatus('success');
-      setTimeout(() => {
-        setPublishStatus('idle');
-        setInsightDraft({ title: '', category: '', excerpt: '', content: '' });
-      }, 2000);
-    }, 1500);
+
+    try {
+      let imageUrl = '';
+      
+      // Upload image first if there is one
+      if (insightDraft.image) {
+        const formData = new FormData();
+        formData.append('file', insightDraft.image);
+        
+        const uploadResponse = await fastAxiosInstance.post('/api/upload-career-image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        imageUrl = uploadResponse.data.url;
+      }
+      
+      // Create career insight with the image URL
+      await fastAxiosInstance.post('/api/create-career-insights', {
+        title: insightDraft.title,
+        category: insightDraft.category,
+        excerpt: insightDraft.excerpt,
+        content: insightDraft.content,
+        articleLink: insightDraft.articleLink,
+        imageUrl: imageUrl,
+        readTime: '5 min read', // You can calculate or add an input for this
+      });
+      
+      setPublishStatus('idle');
+      setInsightDraft({ title: '', category: '', excerpt: '', content: '', articleLink: '', image: null });
+      setContentType('content');
+    } catch (error) {
+      console.error('Error publishing insight:', error);
+      setPublishStatus('idle');
+    }
   };
 
   // Helpers
@@ -162,43 +185,6 @@ export default function AdminJobManagement() {
               {uploadStatus === 'uploading' ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Uploading...</> : <><Upload className="w-4 h-4 mr-2" />Upload File</>}
             </Button>
           </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Server className="w-5 h-5" />SFTP Configuration</CardTitle>
-            <CardDescription>Configure automated job uploads via SFTP</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                <Label htmlFor="sftp-host">Host</Label>
-                <Input id="sftp-host" placeholder="sftp.example.com" value={sftpConfig.host} onChange={(e) => setSftpConfig({ ...sftpConfig, host: e.target.value })} />
-                </div>
-                <div>
-                <Label htmlFor="sftp-port">Port</Label>
-                <Input id="sftp-port" placeholder="22" value={sftpConfig.port} onChange={(e) => setSftpConfig({ ...sftpConfig, port: e.target.value })} />
-                </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                <Label htmlFor="sftp-username">Username</Label>
-                <Input id="sftp-username" placeholder="username" value={sftpConfig.username} onChange={(e) => setSftpConfig({ ...sftpConfig, username: e.target.value })} />
-                </div>
-                <div>
-                <Label htmlFor="sftp-password">Password</Label>
-                <Input id="sftp-password" type="password" placeholder="••••••••" value={sftpConfig.password} onChange={(e) => setSftpConfig({ ...sftpConfig, password: e.target.value })} />
-                </div>
-            </div>
-            <div>
-                <Label htmlFor="sftp-path">Remote Path</Label>
-                <Input id="sftp-path" placeholder="/uploads/jobs" value={sftpConfig.path} onChange={(e) => setSftpConfig({ ...sftpConfig, path: e.target.value })} />
-            </div>
-            <div className="flex gap-2">
-                <Button onClick={handleSFTPUpload} className="flex-1"><CheckCircle2 className="w-4 h-4 mr-2" />Test Connection</Button>
-                <Button variant="outline" className="flex-1">Save Configuration</Button>
-            </div>
-            </CardContent>
         </Card>
       </TabsContent>
 
@@ -264,13 +250,91 @@ export default function AdminJobManagement() {
                 <Input id="insight-category" placeholder="e.g., Interview Tips, Resume Tips" value={insightDraft.category} onChange={(e) => setInsightDraft({ ...insightDraft, category: e.target.value })} className="mt-2" />
             </div>
             <div>
+                <Label htmlFor="insight-image">Featured Image</Label>
+                {!insightDraft.image ? (
+                  <div className="mt-2">
+                    <Input 
+                      id="insight-image" 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setInsightDraft({ ...insightDraft, image: file });
+                        }
+                      }} 
+                      className="hidden" 
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      onClick={() => document.getElementById('insight-image')?.click()}
+                      className="w-full"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Image
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-2 flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                    <span className="text-sm text-gray-700">{insightDraft.image.name}</span>
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setInsightDraft({ ...insightDraft, image: null })}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                )}
+            </div>
+            <div>
                 <Label htmlFor="insight-excerpt">Excerpt</Label>
                 <Textarea id="insight-excerpt" placeholder="Brief summary (150-200 characters)" value={insightDraft.excerpt} onChange={(e) => setInsightDraft({ ...insightDraft, excerpt: e.target.value })} className="mt-2 resize-none" rows={3} />
             </div>
             <div>
-                <Label htmlFor="insight-content">Content</Label>
-                <Textarea id="insight-content" placeholder="Full article content" value={insightDraft.content} onChange={(e) => setInsightDraft({ ...insightDraft, content: e.target.value })} className="mt-2 resize-none" rows={12} />
+                <Label>Content Type</Label>
+                <div className="flex gap-4 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="contentType" 
+                      value="content"
+                      checked={contentType === 'content'}
+                      onChange={() => {
+                        setContentType('content');
+                        setInsightDraft({...insightDraft, articleLink: ''});
+                      }}
+                    />
+                    Write Content
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="contentType" 
+                      value="link"
+                      checked={contentType === 'link'}
+                      onChange={() => {
+                        setContentType('link');
+                        setInsightDraft({...insightDraft, content: ''});
+                      }}
+                    />
+                    External Article Link
+                  </label>
+                </div>
             </div>
+            {contentType === 'content' ? (
+              <div>
+                  <Label htmlFor="insight-content">Content</Label>
+                  <Textarea id="insight-content" placeholder="Full article content" value={insightDraft.content} onChange={(e) => setInsightDraft({ ...insightDraft, content: e.target.value })} className="mt-2 resize-none" rows={12} />
+              </div>
+            ) : (
+              <div>
+                  <Label htmlFor="insight-link">Article Link</Label>
+                  <Input id="insight-link" type="url" placeholder="https://example.com/article" value={insightDraft.articleLink} onChange={(e) => setInsightDraft({ ...insightDraft, articleLink: e.target.value })} className="mt-2" />
+              </div>
+            )}
             <div className="flex gap-2">
                 <Button onClick={handlePublishInsight} disabled={!insightDraft.title || publishStatus === 'publishing'} className="flex-1">
                 {publishStatus === 'publishing' ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Publishing...</> : <><CheckCircle2 className="w-4 h-4 mr-2" />Publish Insight</>}

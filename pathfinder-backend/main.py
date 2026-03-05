@@ -16,6 +16,7 @@ from fastapi import HTTPException
 from routes.job_descriptions import router as job_descriptions_router
 from routes.templates import router as templates_router
 from routes.skills import router as skills_router
+from upload_images import upload_career_images
 
 from jwt_auth import verify_jwt
 
@@ -221,9 +222,9 @@ def create_career_insights(
         category=payload.category,
         excerpt=payload.excerpt,
         content=payload.content,
+        articleLink=payload.articleLink,
         imageUrl=payload.imageUrl,
         readTime=payload.readTime,
-        url=payload.url
     )
 
     db.add(career_insight)
@@ -231,6 +232,15 @@ def create_career_insights(
     db.refresh(career_insight)
 
     return career_insight
+
+
+@app.post("/api/upload-career-image", response_model=ImageUploadResponse)
+async def upload_career_image(file: UploadFile = File(...)):
+    result = await upload_career_images(file)
+    return ImageUploadResponse(
+        url=result["url"],
+        filename=result["filename"]
+    )
 
 
 @app.get("/api/career-insights", response_model=list[CareerInsightsResponse])
