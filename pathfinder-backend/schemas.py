@@ -1,6 +1,7 @@
 from pydantic import BaseModel 
 from datetime import date, datetime 
-from typing import Optional 
+from typing import Optional, List
+from uuid import UUID
 
 """
 Pydantic takes care of validation and serialization
@@ -96,3 +97,127 @@ class SavedJobWithDetails(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+
+# Template schemas
+class TemplateResponse(BaseModel):
+    id: UUID
+    template_name: str
+    industry: str
+    job_title: str
+    seniority_level: str
+    employment_type: str
+    province: Optional[str] = None
+    city: Optional[str] = None
+    job_description: Optional[str] = None
+    responsibilities: Optional[list] = None
+    qualifications: Optional[str] = None
+    compensation_min: Optional[float] = None
+    compensation_max: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+class TemplateListResponse(BaseModel):
+    templates: list[TemplateResponse]
+    total: int
+
+# Skill schemas
+class SkillResponse(BaseModel):
+    id: UUID
+    skill_name: str
+    skill_category: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class SkillSearchResponse(BaseModel):
+    skills: list[SkillResponse]
+
+# JobDescription schemas
+class JobDescriptionSkillInput(BaseModel):
+    skill_id: UUID
+    skill_type: str
+
+class JobDescriptionCreate(BaseModel):
+    template_id: Optional[UUID] = None
+    job_title: str
+    industry: Optional[str] = None
+    job_function: Optional[str] = None
+    seniority_level: Optional[str] = None
+    employment_type: Optional[str] = None
+    location_type: Optional[str] = None
+    location_city: Optional[str] = None
+    location_province: Optional[str] = None
+    job_description: Optional[str] = None
+    responsibilities: Optional[list] = None
+    qualifications: Optional[str] = None
+    compensation_min: Optional[float] = None
+    compensation_max: Optional[float] = None
+    compensation_currency: Optional[str] = "CAD"
+    application_deadline: Optional[date] = None
+    skills: Optional[List[JobDescriptionSkillInput]] = []
+
+
+class JobDescriptionUpdate(BaseModel):
+    job_title: Optional[str] = None
+    industry: Optional[str] = None
+    job_function: Optional[str] = None
+    seniority_level: Optional[str] = None
+    employment_type: Optional[str] = None
+    location_type: Optional[str] = None
+    location_city: Optional[str] = None
+    location_province: Optional[str] = None
+    job_description: Optional[str] = None
+    responsibilities: Optional[list] = None
+    qualifications: Optional[str] = None
+    compensation_min: Optional[float] = None
+    compensation_max: Optional[float] = None
+    compensation_currency: Optional[str] = "CAD"
+    application_deadline: Optional[date] = None
+    skills: Optional[List[JobDescriptionSkillInput]] = None
+
+class JobDescriptionSkillResponse(BaseModel):
+    skill_id: UUID
+    skill_name: str
+    skill_type: str
+
+    class Config:
+        from_attributes = True
+
+class JobDescriptionResponse(BaseModel):
+    id: UUID
+    user_id: str
+    template_id: Optional[UUID] = None
+    job_title: str
+    industry: Optional[str] = None
+    job_function: Optional[str] = None
+    seniority_level: Optional[str] = None
+    employment_type: Optional[str] = None
+    location_type: Optional[str] = None
+    location_city: Optional[str] = None
+    location_province: Optional[str] = None
+    job_description: Optional[str] = None
+    responsibilities: Optional[list] = None
+    qualifications: Optional[str] = None
+    compensation_min: Optional[float] = None
+    compensation_max: Optional[float] = None
+    compensation_currency: Optional[str] = "CAD"
+    application_deadline: Optional[date] = None
+    status: str
+    skills: List[JobDescriptionSkillResponse] = []
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    published_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+    
+
+class JobDescriptionListResponse(BaseModel):
+    job_descriptions: list[JobDescriptionResponse]
+    total: int
+    page: int
+    page_size: int
+

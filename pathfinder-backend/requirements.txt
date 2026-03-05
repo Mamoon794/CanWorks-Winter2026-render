@@ -6,6 +6,7 @@ python-dotenv
 openpyxl
 python-multipart
 pydantic
+python-jose[cryptography]
 PyJWT
 cryptography
 httpx

@@ -34,9 +34,9 @@ export function EmployerProfilePage() {
             setFormData({
                 email: user.email,
                 companyName: user.userData.companyName,
-                phone: user.userData.contactInfo.phone,
-                website: user.userData.contactInfo.website,
-                address: user.userData.contactInfo.address,
+                phone: user.userData.contactInfo?.phone || '',
+                website: user.userData.contactInfo?.website || '',
+                address: user.userData.contactInfo?.address || '',
                 availableForEvents: user.userData.availableForEvents,
                 sponsor: user.userData.sponsor,
                 specialNotes: user.userData.specialNotes,
@@ -228,9 +228,9 @@ export function EmployerProfilePage() {
                                     <CardTitle>Contact Information</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2">
-                                    <div><Label htmlFor="Phone">Phone: {user.userData.contactInfo.phone}</Label></div>
-                                    <div><Label htmlFor="Website">Website: {user.userData.contactInfo.website}</Label></div>
-                                    <div><Label htmlFor="Address">Address: {user.userData.contactInfo.address}</Label></div>
+                                    <div><Label htmlFor="Phone">Phone: {user.userData.contactInfo?.phone || '-'}</Label></div>
+                                    <div><Label htmlFor="Website">Website: {user.userData.contactInfo?.website || '-'}</Label></div>
+                                    <div><Label htmlFor="Address">Address: {user.userData.contactInfo?.address || '-'}</Label></div>
                                 </CardContent>
                             </Card>
 

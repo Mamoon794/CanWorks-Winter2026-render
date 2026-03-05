@@ -12,9 +12,11 @@ interface JobCardProps {
 
 export function JobCard({ job, isSaved, onToggleSave }: JobCardProps) {
     const typeColors = {
-        'internship': 'bg-blue-100 text-blue-700',
+        'intern': 'bg-blue-100 text-blue-700',
         'coop': 'bg-purple-100 text-purple-700',
         'new-grad': 'bg-green-100 text-green-700',
+        'part time': 'bg-orange-100 text-orange-700',
+        'full time': 'bg-indigo-100 text-indigo-700',
     };
 
     return (
@@ -44,7 +46,11 @@ export function JobCard({ job, isSaved, onToggleSave }: JobCardProps) {
             <div className="flex flex-wrap gap-2">
                 {job.job_type && (
                     <Badge className={typeColors[job.job_type]}>
-                    {job.job_type === 'new-grad' ? 'New Grad' : job.job_type.charAt(0).toUpperCase() + job.job_type.slice(1)}
+                    {job.job_type === 'new-grad' ? 'New Grad' : 
+                     job.job_type === 'part time' ? 'Part Time' :
+                     job.job_type === 'full time' ? 'Full Time' :
+                     job.job_type === 'intern' ? 'Internship' :
+                     job.job_type.charAt(0).toUpperCase() + job.job_type.slice(1)}
                     </Badge>
                 )}
                 {job.skills?.slice(0, 3).map(skill => (

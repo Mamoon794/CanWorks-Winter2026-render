@@ -3,6 +3,7 @@ import { JobCard } from '@/app/components/JobCard';
 import { Card, CheckBox, Label, Input, Button } from '@/app/components/globalComponents';
 import { Search, Bell, BellRing, Mail } from 'lucide-react';
 import type { SavedSearch, JobPosting} from '@/types';
+import JobDetailsSidebar from '@/app/components/JobDetailsSidebar'; // <--- added import
 import { useSavedJobs } from "@/app/hooks/useSavedJobs";
 
 interface ExplorePageProps {
@@ -13,14 +14,16 @@ interface ExplorePageProps {
 export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
     const { savedJobs, toggleSave } = useSavedJobs();
     const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
+    const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null); // <--- added state
     const pageSize = 10;
     const [page, setPage] = useState(1);
 
     const [filters, setFilters] = useState({
-        types: [] as ('internship' | 'coop' | 'new-grad')[],
+        types: [] as ('intern' | 'coop' | 'new-grad' | 'part time' | 'full time')[],
         keywords: '',
         location: '',
         mode: [] as ('Remote' | 'On Site' | 'Hybrid')[],
+        paymentTypes: [] as ('paid' | 'unpaid')[],
     });
 
 
@@ -33,12 +36,30 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
     }, [savedSearches]);
 
 
-    const toggleType = (type: 'internship' | 'coop' | 'new-grad') => {
+    const toggleType = (type: 'intern' | 'coop' | 'new-grad' | 'part time' | 'full time') => {
         setFilters(prev => ({
         ...prev,
         types: prev.types.includes(type)
             ? prev.types.filter(t => t !== type)
             : [...prev.types, type],
+        }));
+    };
+
+    const toggleMode = (mode: 'Remote' | 'On Site' | 'Hybrid') => {
+        setFilters(prev => ({
+        ...prev,
+        mode: prev.mode.includes(mode)
+            ? prev.mode.filter(m => m !== mode)
+            : [...prev.mode, mode],
+        }));
+    };
+
+    const togglePaymentType = (paymentType: 'paid' | 'unpaid') => {
+        setFilters(prev => ({
+        ...prev,
+        paymentTypes: prev.paymentTypes.includes(paymentType)
+            ? prev.paymentTypes.filter(p => p !== paymentType)
+            : [...prev.paymentTypes, paymentType],
         }));
     };
 
@@ -48,7 +69,7 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
         id: Date.now().toString(),
         query: searchQuery,
         filters: {
-            type: filters.types.length > 0 ? filters.types : undefined,
+            type: filters.types.length > 0 ? filters.types as ('internship' | 'coop' | 'new-grad')[] : undefined,
             location: filters.location || undefined,
             keywords: filters.keywords ? filters.keywords.split(',').map(k => k.trim()) : undefined,
         },
@@ -65,11 +86,14 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
     };
 
     const filteredJobs = jobs.filter(job => {
-        if (filters.types.length > 0 && !filters.types.includes(job.job_type)) return false;
+        if (filters.types.length > 0 && !filters.types.map(t => t.toLowerCase()).includes(job.job_type.toLowerCase())) return false;
         const jobLocation = `${job.city}, ${job.province}`.toLowerCase();
         if (filters.location && !jobLocation.includes(filters.location.toLowerCase())) return false;
-        const jobMode = job.mode.toLowerCase();
-        if (filters.mode.length > 0 && !filters.mode.some(m => jobMode.includes(m.toLowerCase()))) return false;
+        if (filters.mode.length > 0 && !filters.mode.includes(job.mode)) return false;
+        if (filters.paymentTypes.length > 0) {
+            const jobPaymentType = job.with_pay ? 'paid' : 'unpaid';
+            if (!filters.paymentTypes.includes(jobPaymentType)) return false;
+        }
         if (filters.keywords) {
         const keywords = filters.keywords.toLowerCase().split(',').map(k => k.trim());
         const jobText = `${job.title} ${job.description} ${job.skills?.join(' ')}`.toLowerCase();
@@ -96,8 +120,8 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
                         <div className="flex items-center space-x-2">
                         <CheckBox
                             id="filter-internship"
-                            checked={filters.types.includes('internship')}
-                            onChange={() => toggleType('internship')}
+                            checked={filters.types.includes('intern')}
+                            onChange={() => toggleType('intern')}
                         />
                         <Label htmlFor="filter-internship" className="cursor-pointer">Internship</Label>
                         </div>
@@ -116,6 +140,74 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
                             onChange={() => toggleType('new-grad')}
                         />
                         <Label htmlFor="filter-newgrad" className="cursor-pointer">New Grad</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <CheckBox
+                            id="filter-parttime"
+                            checked={filters.types.includes('part time')}
+                            onChange={() => toggleType('part time')}
+                        />
+                        <Label htmlFor="filter-parttime" className="cursor-pointer">Part Time</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <CheckBox
+                            id="filter-fulltime"
+                            checked={filters.types.includes('full time')}
+                            onChange={() => toggleType('full time')}
+                        />
+                        <Label htmlFor="filter-fulltime" className="cursor-pointer">Full Time</Label>
+                        </div>
+                    </div>
+                    </div>
+
+                    <div className="space-y-3">
+                    <Label>Work Mode</Label>
+                    <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                        <CheckBox
+                            id="filter-remote"
+                            checked={filters.mode.includes('Remote')}
+                            onChange={() => toggleMode('Remote')}
+                        />
+                        <Label htmlFor="filter-remote" className="cursor-pointer">Remote</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <CheckBox
+                            id="filter-onsite"
+                            checked={filters.mode.includes('On Site')}
+                            onChange={() => toggleMode('On Site')}
+                        />
+                        <Label htmlFor="filter-onsite" className="cursor-pointer">On Site</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <CheckBox
+                            id="filter-hybrid"
+                            checked={filters.mode.includes('Hybrid')}
+                            onChange={() => toggleMode('Hybrid')}
+                        />
+                        <Label htmlFor="filter-hybrid" className="cursor-pointer">Hybrid</Label>
+                        </div>
+                    </div>
+                    </div>
+
+                    <div className="space-y-3">
+                    <Label>Payment Type</Label>
+                    <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                        <CheckBox
+                            id="filter-paid"
+                            checked={filters.paymentTypes.includes('paid')}
+                            onChange={() => togglePaymentType('paid')}
+                        />
+                        <Label htmlFor="filter-paid" className="cursor-pointer">Paid</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <CheckBox
+                            id="filter-unpaid"
+                            checked={filters.paymentTypes.includes('unpaid')}
+                            onChange={() => togglePaymentType('unpaid')}
+                        />
+                        <Label htmlFor="filter-unpaid" className="cursor-pointer">Unpaid</Label>
                         </div>
                     </div>
                     </div>
@@ -204,12 +296,13 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
 
             <div className="space-y-4">
                 {filteredJobs.map(job => (
-                <JobCard
-                    key={job.id}
-                    job={job}
-                    isSaved={savedJobs.has(job.id.toString())}
-                    onToggleSave={toggleSave}
-                />
+                <div key={job.id} className="cursor-pointer" onClick={() => setSelectedJob(job)}>
+                    <JobCard
+                        job={job}
+                        isSaved={savedJobs.has(job.id.toString())}
+                        onToggleSave={toggleSave}
+                    />
+                </div>
                 ))}
             </div>
 
@@ -222,6 +315,9 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
             )}
             </main>
         </div>
+
+        {/* Sidebar for job details */}
+        <JobDetailsSidebar job={selectedJob} onClose={() => setSelectedJob(null)} />
         </div>
     );
 }

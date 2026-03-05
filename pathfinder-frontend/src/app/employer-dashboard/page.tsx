@@ -3,9 +3,13 @@
 // Updated imports to use the single widgets file
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/globalComponents';
 import { Header } from '@/app/components/header'
-import { BarChart3, Briefcase } from 'lucide-react';
+import { BarChart3, Briefcase, PlusCircle, FileEdit, CheckCircle, Clock } from 'lucide-react';
 import { EmployerAnalyticsPage } from './EmployerAnalyticsPage';
 import { EmployerProfilePage } from './EmployerProfilePage';
+import { CreateJobPostingsPage } from './CreateJobPostingsPage';
+import { JobPostingDraftsPage } from './JobPostingDraftsPage';
+import { ActiveJobPostingsPage } from './ActiveJobPostingsPage';
+import { JobPostingsHistoryPage } from './JobPostingsHistoryPage';
 import { UserProvider, CheckUser } from '@/app/components/authComponents';
 
 export default function EmployerDashboardPage() {
@@ -30,17 +34,52 @@ export default function EmployerDashboardPage() {
                             <Briefcase className="w-4 h-4" />
                             Profile
                             </TabsTrigger>
+                            
+                            <TabsTrigger value="create" className="flex items-center gap-2">
+                                <PlusCircle className="w-4 h-4"/>
+                                Create Job Posting
+                            </TabsTrigger>
+
+                            <TabsTrigger value="drafts" className="flex items-center gap-2">
+                                <FileEdit className="w-4 h-4"/>
+                                Drafts
+                            </TabsTrigger>
+
+                            <TabsTrigger value="active" className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4"/>
+                                Active
+                            </TabsTrigger>
+
+                            <TabsTrigger value="history" className="flex items-center gap-2">
+                                <Clock className="w-4 h-4"/>
+                                History
+                            </TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="analytics" className="space-y-4 animate-in fade-in-50 duration-500 slide-in-from-bottom-2">
-                                <EmployerAnalyticsPage>
-                                </EmployerAnalyticsPage>
+                                <EmployerAnalyticsPage />
                         </TabsContent>
 
                         <TabsContent value="profile" className="space-y-4 animate-in fade-in-50 duration-500 slide-in-from-bottom-2">
-                                <EmployerProfilePage>
-                                </EmployerProfilePage>
+                                <EmployerProfilePage />
                         </TabsContent>
+
+                        <TabsContent value="create" className="space-y-4 animate-in fade-in-50 duration-500 slide-in-from-bottom-2">
+                            <CreateJobPostingsPage />
+                        </TabsContent>
+
+                        <TabsContent value="drafts" className="space-y-4 animate-in fade-in-50 duration-500 slide-in-from-bottom-2">
+                            <JobPostingDraftsPage />
+                        </TabsContent>
+
+                        <TabsContent value="active" className="space-y-4 animate-in fade-in-50 duration-500 slide-in-from-bottom-2">
+                            <ActiveJobPostingsPage />
+                        </TabsContent>
+
+                        <TabsContent value="history" className="space-y-4 animate-in fade-in-50 duration-500 slide-in-from-bottom-2">
+                            <JobPostingsHistoryPage />
+                        </TabsContent>
+
                         </Tabs>
                     </div>
                 </CheckUser>

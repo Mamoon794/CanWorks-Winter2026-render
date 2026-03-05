@@ -12,7 +12,7 @@ import { CareerInsightsPage } from './CareerInsightsPage';
 import { ProfilePage } from './ProfilePage';
 import { UserProvider, CheckUser } from '@/app/components/authComponents';
 import AdminReports from '@/app/admin-dashboard/reports';
-import axios from 'axios';
+import fastAxiosInstance from '@/axiosConfig/axiosfig';
 import type { JobPosting } from '@/types';
 
 export default function StudentDashboardPage() {
@@ -24,9 +24,9 @@ export default function StudentDashboardPage() {
     }, []);
 
     const fetchJobs = () => {
-        let url = `http://127.0.0.1:8000/api/jobs?page=${1}&page_size=${10}`;
+        let url = `/api/jobs?page=${1}&page_size=${10}`;
 
-        axios.get(url).then(
+        fastAxiosInstance.get(url).then(
             response => {
                 response.data.jobs.forEach((job: JobPosting) => {
                     job.applySite = job.link_to_posting ? new URL(job.link_to_posting).hostname.replace('www.', '').replace('.com', '') : 'Unknown';
