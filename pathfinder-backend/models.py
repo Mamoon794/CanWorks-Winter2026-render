@@ -1,5 +1,6 @@
 from datetime import datetime, date, timezone
-from sqlalchemy import Column, Integer, String, Text, Boolean, Float, Date, DateTime, JSON
+from sqlalchemy import Column, Integer, String, Text, Boolean, Float, Date, DateTime, JSON, ForeignKey, UniqueConstraint
+from sqlalchemy.orm import relationship
 from database import Base
 
 class JobPosting(Base):
@@ -37,3 +38,23 @@ class JobPosting(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda:datetime.now(timezone.utc))
 
+
+class SavedJob(Base):
+    __tablename__ = "saved_jobs"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Supabase auth user id (JWT "sub")
+    user_id = Column(String, nullable=False, index=True)
+
+    # Foreign key to your existing job_postings table
+    job_id = Column(Integer, ForeignKey("job_postings.id", ondelete="CASCADE"), nullable=False)
+
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Prevent duplicate saves
+    __table_args__ = (
+        UniqueConstraint("user_id", "job_id", name="unique_user_job"),
+    )
+
+    # Lets you access saved_job.job
+    job = relationship("JobPosting")

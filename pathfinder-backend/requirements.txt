@@ -6,3 +6,6 @@ python-dotenv
 openpyxl
 python-multipart
 pydantic
+PyJWT
+cryptography
+httpx

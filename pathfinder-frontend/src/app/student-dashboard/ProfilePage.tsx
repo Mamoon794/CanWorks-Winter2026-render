@@ -12,6 +12,7 @@ const months = [
 ];
 
 interface StudentFormData {
+    savedJobs?: string[]; 
     email: string;
     university: string;
     graduationMonth: string;

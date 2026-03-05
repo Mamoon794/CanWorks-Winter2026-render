@@ -74,3 +74,25 @@ class UploadResponse(BaseModel):
     jobs_skipped: int
     errors: list[str]
 
+
+# Saved Job schemas
+class SavedJobCreate(BaseModel):
+    job_id: int
+
+
+class SavedJobResponse(BaseModel):
+    id: int
+    user_id: str
+    job_id: int
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class SavedJobWithDetails(BaseModel):
+    id: int
+    created_at: Optional[datetime] = None
+    job: JobPostingResponse
+
+    class Config:
+        from_attributes = True

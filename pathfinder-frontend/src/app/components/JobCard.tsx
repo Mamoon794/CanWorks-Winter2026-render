@@ -64,7 +64,7 @@ export function JobCard({ job, isSaved, onToggleSave }: JobCardProps) {
             <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onToggleSave(job.id)}
+                onClick={() => onToggleSave(job.id.toString())}
                 className="shrink-0"
             >
                 {isSaved ? (

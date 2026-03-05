@@ -3,6 +3,7 @@ import { JobCard } from '@/app/components/JobCard';
 import { Card, CheckBox, Label, Input, Button } from '@/app/components/globalComponents';
 import { Search, Bell, BellRing, Mail } from 'lucide-react';
 import type { SavedSearch, JobPosting} from '@/types';
+import { useSavedJobs } from "@/app/hooks/useSavedJobs";
 
 interface ExplorePageProps {
     jobs: JobPosting[];
@@ -10,7 +11,7 @@ interface ExplorePageProps {
 }
 
 export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
-    const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
+    const { savedJobs, toggleSave } = useSavedJobs();
     const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
     const pageSize = 10;
     const [page, setPage] = useState(1);
@@ -22,15 +23,6 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
         mode: [] as ('Remote' | 'On Site' | 'Hybrid')[],
     });
 
-    useEffect(() => {
-        const stored = localStorage.getItem('savedJobs');
-        if (stored) setSavedJobs(new Set(JSON.parse(stored)));
-    }, []);
-
-    useEffect(() => {
-        const stored = localStorage.getItem('savedSearches');
-        if (stored) setSavedSearches(JSON.parse(stored));
-    }, []);
 
     useEffect(() => {
         localStorage.setItem('savedJobs', JSON.stringify(Array.from(savedJobs)));
@@ -40,17 +32,6 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
         localStorage.setItem('savedSearches', JSON.stringify(savedSearches));
     }, [savedSearches]);
 
-    const toggleSave = (jobId: string) => {
-        setSavedJobs(prev => {
-        const next = new Set(prev);
-        if (next.has(jobId)) {
-            next.delete(jobId);
-        } else {
-            next.add(jobId);
-        }
-        return next;
-        });
-    };
 
     const toggleType = (type: 'internship' | 'coop' | 'new-grad') => {
         setFilters(prev => ({
@@ -226,7 +207,7 @@ export function ExplorePage({ jobs = [], total = 0 }: ExplorePageProps) {
                 <JobCard
                     key={job.id}
                     job={job}
-                    isSaved={savedJobs.has(job.id)}
+                    isSaved={savedJobs.has(job.id.toString())}
                     onToggleSave={toggleSave}
                 />
                 ))}
