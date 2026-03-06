@@ -18,9 +18,11 @@ import type { JobPosting } from '@/types';
 export default function StudentDashboardPage() {
     const [jobs, setJobs] = useState<JobPosting[]>([]);
     const [total, setTotal] = useState<number>(0);
+    const [recommended, setRecommended] = useState<JobPosting[]>([]);
 
     useEffect(() => {
         fetchJobs();
+        fetchRecommendations();
     }, []);
 
     const fetchJobs = () => {
@@ -37,6 +39,19 @@ export default function StudentDashboardPage() {
         ).catch(
             error => console.error("Failed to fetch jobs", error)
         );
+    };
+
+    const fetchRecommendations = async () => {
+        try {
+            const res = await fastAxiosInstance.get('/api/recommendations?k=4');
+            const recs: JobPosting[] = res.data.jobs || [];
+            recs.forEach((job: JobPosting) => {
+                job.applySite = job.link_to_posting ? new URL(job.link_to_posting).hostname.replace('www.', '').replace('.com', '') : 'Unknown';
+            });
+            setRecommended(recs);
+        } catch (error) {
+            console.error('Failed to fetch recommendations', error);
+        }
     };
 
     return (
@@ -71,8 +86,9 @@ export default function StudentDashboardPage() {
                         </TabsList>
 
                         <TabsContent value="home" className="space-y-4 animate-in fade-in-50 duration-500 slide-in-from-bottom-2">
-                                <HomePage totalJobs={total}>
-                                </HomePage>
+                            <HomePage totalJobs={total} recommendedJobs={recommended}>
+                            </HomePage>
+
                         </TabsContent>
 
                         <TabsContent value="explore" className="space-y-4 animate-in fade-in-50 duration-500 slide-in-from-bottom-2">

@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, date, timezone
 from sqlalchemy import Column, Integer, String, Text, Boolean, Float, Date, DateTime, JSON, Numeric, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -43,6 +44,8 @@ class JobPosting(Base): # jobs uploaded by admins via Excel files
     # without lambda, the function datetime.now is only invoked once when the table is created, making all entries have the same created_at time
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda:datetime.now(timezone.utc))
+    # dense vector embedding for semantic search (SentenceTransformers -- 384 dims)
+    embedding = Column(Vector(384), nullable=True)
 
 
 class SavedJob(Base):
@@ -63,6 +66,17 @@ class SavedJob(Base):
     )
 
     # Lets you access saved_job.job
+    job = relationship("JobPosting")
+
+
+class JobEvent(Base):
+    __tablename__ = "job_events"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String, nullable=False, index=True)
+    job_id = Column(Integer, ForeignKey("job_postings.id", ondelete="CASCADE"), nullable=False)
+    event_type = Column(String, nullable=False)  # e.g., 'view', 'save', 'apply'
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
     job = relationship("JobPosting")
 
 
