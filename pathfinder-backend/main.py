@@ -1,13 +1,14 @@
+import os
 from fastapi import FastAPI
 from fastapi import UploadFile, File # handle file uploads
 from fastapi import Depends
-from fastapi import Query # Define query parameters with defaults and validation 
+from fastapi import Query # Define query parameters with defaults and validation
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_ # SQLAlchemy OR operator for combining search conditions
 from database import engine, get_db, Base
-from models import JobPosting, SavedJob, CareerInsight
-from schemas import JobPostingResponse, JobPostingListResponse, UploadResponse
+from models import JobPosting, SavedJob, CareerInsight, JobDescription
+from schemas import JobPostingResponse, JobPostingListResponse, UploadResponse, JobDescriptionListResponse, JobDescriptionResponse
 from schemas import SavedJobCreate, SavedJobResponse, SavedJobWithDetails
 from schemas import CareerInsightCreate, CareerInsightsResponse, ImageUploadResponse
 from excel_parser import parse_excel_file
@@ -16,6 +17,8 @@ from fastapi import HTTPException
 from routes.job_descriptions import router as job_descriptions_router
 from routes.templates import router as templates_router
 from routes.skills import router as skills_router
+from routes.applications import router as applications_router
+from routes.analytics import router as analytics_router
 from upload_images import upload_career_images
 
 from jwt_auth import verify_jwt
@@ -42,6 +45,8 @@ Base.metadata.create_all(bind=engine)
 app.include_router(job_descriptions_router)
 app.include_router(templates_router)
 app.include_router(skills_router)
+app.include_router(applications_router)
+app.include_router(analytics_router)
 
 # Upload endpoint
 # register a POST route
@@ -247,3 +252,45 @@ async def upload_career_image(file: UploadFile = File(...)):
 def get_career_insights(db: Session = Depends(get_db)):
     insights = db.query(CareerInsight).order_by(CareerInsight.created_at.desc()).all()
     return insights
+
+
+# Public endpoint for students to browse published employer job descriptions
+@app.get("/api/published-jobs", response_model=JobDescriptionListResponse)
+def get_published_jobs(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    search: str = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    from datetime import date
+
+    query = db.query(JobDescription).filter(
+        JobDescription.status == "published",
+        JobDescription.deleted_at.is_(None),
+    ).filter(
+        (JobDescription.application_deadline.is_(None)) |
+        (JobDescription.application_deadline >= date.today())
+    )
+
+    if search:
+        query = query.filter(
+            or_(
+                JobDescription.job_title.ilike(f"%{search}%"),
+                JobDescription.industry.ilike(f"%{search}%"),
+                JobDescription.job_description.ilike(f"%{search}%"),
+            )
+        )
+
+    query = query.order_by(JobDescription.published_at.desc())
+    total = query.count()
+    jobs = query.offset((page - 1) * page_size).limit(page_size).all()
+
+    # Import the helper from the job_descriptions route to reuse the response builder
+    from routes.job_descriptions import _to_response
+
+    return JobDescriptionListResponse(
+        job_descriptions=[_to_response(j) for j in jobs],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )

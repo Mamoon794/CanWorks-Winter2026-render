@@ -20,27 +20,27 @@ export function SkillSearchInput({ label, selectedSkills, onAdd, onRemove }: Ski
     const wrapperRef = useRef<HTMLDivElement>(null);
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Fetch skills from the API filtering by query (empty query returns all skills)
+    const fetchSkills = async (searchQuery: string) => {
+        try {
+            const response = await skillApi.search(searchQuery);
+            const filtered = response.data.skills.filter(
+                (skill: SkillOption) => !selectedSkills.some(s => s.skill_id === skill.id)
+            );
+            setResults(filtered);
+            setShowDropdown(true);
+        } catch {
+            setResults([]);
+            setShowDropdown(true);
+        }
+    };
+
     // Debounced search: waits 300ms after the user stops typing before calling the API
     useEffect(() => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
 
-        if (query.length < 2) {
-            setResults([]);
-            setShowDropdown(false);
-            return;
-        }
-
-        debounceRef.current = setTimeout(async () => {
-            try {
-                const response = await skillApi.search(query);
-                const filtered = response.data.skills.filter(
-                    (skill: SkillOption) => !selectedSkills.some(s => s.skill_id === skill.id)
-                );
-                setResults(filtered);
-                setShowDropdown(filtered.length > 0);
-            } catch {
-                setResults([]);
-            }
+        debounceRef.current = setTimeout(() => {
+            fetchSkills(query);
         }, 300);
 
         return () => {
@@ -59,10 +59,44 @@ export function SkillSearchInput({ label, selectedSkills, onAdd, onRemove }: Ski
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const [isCreating, setIsCreating] = useState(false);
+
     const handleSelect = (skill: SkillOption) => {
         onAdd({ skill_id: skill.id, skill_name: skill.skill_name });
         setQuery('');
         setShowDropdown(false);
+    };
+
+    const handleCreateCustomSkill = async () => {
+        const trimmed = query.trim();
+        if (!trimmed || isCreating) return;
+
+        setIsCreating(true);
+        try {
+            const response = await skillApi.create(trimmed);
+            const newSkill = response.data;
+            onAdd({ skill_id: newSkill.id, skill_name: newSkill.skill_name });
+            setQuery('');
+            setShowDropdown(false);
+        } catch (err: unknown) {
+            // If skill already exists (409), search again to find it
+            if (err && typeof err === 'object' && 'response' in err) {
+                const axiosErr = err as { response?: { status?: number } };
+                if (axiosErr.response?.status === 409) {
+                    const response = await skillApi.search(trimmed);
+                    const match = response.data.skills.find(
+                        (s: SkillOption) => s.skill_name.toLowerCase() === trimmed.toLowerCase()
+                    );
+                    if (match) {
+                        onAdd({ skill_id: match.id, skill_name: match.skill_name });
+                        setQuery('');
+                        setShowDropdown(false);
+                    }
+                }
+            }
+        } finally {
+            setIsCreating(false);
+        }
     };
 
     return (
@@ -96,7 +130,13 @@ export function SkillSearchInput({ label, selectedSkills, onAdd, onRemove }: Ski
                         placeholder="Search skills..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        onFocus={() => { if (results.length > 0) setShowDropdown(true); }}
+                        onFocus={() => {
+                            if (results.length > 0) {
+                                setShowDropdown(true);
+                            } else {
+                                fetchSkills(query);
+                            }
+                        }}
                         className="pl-9"
                     />
                 </div>
@@ -116,6 +156,17 @@ export function SkillSearchInput({ label, selectedSkills, onAdd, onRemove }: Ski
                                 )}
                             </button>
                         ))}
+                        {results.length === 0 && query.trim().length >= 2 && (
+                            <button
+                                type="button"
+                                onClick={handleCreateCustomSkill}
+                                disabled={isCreating}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 flex items-center justify-between text-blue-600"
+                            >
+                                <span>{isCreating ? 'Adding...' : `Add "${query.trim()}" as a custom skill`}</span>
+                                <span className="text-xs text-slate-400">Custom</span>
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

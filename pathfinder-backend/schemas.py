@@ -124,6 +124,10 @@ class TemplateListResponse(BaseModel):
     total: int
 
 # Skill schemas
+class SkillCreate(BaseModel):
+    skill_name: str
+    skill_category: Optional[str] = None
+
 class SkillResponse(BaseModel):
     id: UUID
     skill_name: str
@@ -220,6 +224,81 @@ class JobDescriptionListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+# Application schemas
+class ApplicationCreate(BaseModel):
+    job_description_id: UUID
+    student_name: Optional[str] = None
+    student_email: Optional[str] = None
+    university: Optional[str] = None
+    major: Optional[str] = None
+    graduation_year: Optional[str] = None
+    relevant_experience: Optional[str] = None
+
+class ApplicationStatusUpdate(BaseModel):
+    status: str  # pending, reviewing, interview, offer, rejected, hired
+
+class ApplicationResponse(BaseModel):
+    id: UUID
+    student_user_id: str
+    job_description_id: UUID
+    status: str
+    student_name: Optional[str] = None
+    student_email: Optional[str] = None
+    university: Optional[str] = None
+    major: Optional[str] = None
+    graduation_year: Optional[str] = None
+    relevant_experience: Optional[str] = None
+    resume_url: Optional[str] = None
+    resume_filename: Optional[str] = None
+    applied_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    job_title: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class ApplicationListResponse(BaseModel):
+    applications: list[ApplicationResponse]
+    total: int
+    page: int
+    page_size: int
+
+# Analytics schemas
+class PipelineStats(BaseModel):
+    pending: int
+    reviewing: int
+    interview: int
+    offer: int
+    rejected: int
+    hired: int
+
+class JobStatusCounts(BaseModel):
+    draft: int
+    published: int
+    expired: int
+    deleted: int
+
+class TopSkillItem(BaseModel):
+    skill_name: str
+    count: int
+
+class TopUniversityItem(BaseModel):
+    university: str
+    count: int
+
+class EmployerAnalyticsResponse(BaseModel):
+    total_applications: int
+    pipeline: PipelineStats
+    applications_per_position: float
+    time_to_hire_days: Optional[float] = None
+    offer_acceptance_rate: Optional[float] = None
+    interview_to_hire_ratio: Optional[str] = None
+    job_status_counts: JobStatusCounts
+    top_skills: list[TopSkillItem]
+    top_universities: list[TopUniversityItem]
+    total_published_jobs: int
 
 
 class CareerInsightCreate(BaseModel):

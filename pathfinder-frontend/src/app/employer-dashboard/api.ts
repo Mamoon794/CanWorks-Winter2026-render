@@ -31,5 +31,18 @@ export const templateApi = {
 };
 
 export const skillApi = {
-    search: (q: string) => fastAxiosInstance.get('/api/skills', { params: { q } })
+    search: (q: string) => fastAxiosInstance.get('/api/skills', { params: { q } }),
+    create: (skill_name: string) => fastAxiosInstance.post('/api/skills', { skill_name })
+};
+
+export const applicationApi = {
+    list: (params?: { job_description_id?: string; status?: string; page?: number; page_size?: number }) =>
+        fastAxiosInstance.get('/api/applications', { params }),
+
+    updateStatus: (applicationId: string, status: string) =>
+        fastAxiosInstance.put(`/api/applications/${applicationId}/status`, { status }),
+};
+
+export const analyticsApi = {
+    getEmployerAnalytics: () => fastAxiosInstance.get('/api/employer/analytics'),
 };

@@ -1,16 +1,22 @@
 import os
 import uuid
+from dotenv import load_dotenv
 from supabase import create_client, Client
 from fastapi import HTTPException
 
+load_dotenv()
 
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+_supabase_client: Client | None = None
 
-if not supabase_url or not supabase_key:
-    raise Exception("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in environment")
-
-supabase: Client = create_client(supabase_url, supabase_key)
+def _get_supabase() -> Client:
+    global _supabase_client
+    if _supabase_client is None:
+        url = os.getenv("SUPABASE_URL")
+        key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        if not url or not key:
+            raise HTTPException(status_code=500, detail="SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in environment")
+        _supabase_client = create_client(url, key)
+    return _supabase_client
 
 
 async def upload_career_images(file):
@@ -23,14 +29,15 @@ async def upload_career_images(file):
         unique_filename = f"{uuid.uuid4()}.{file_ext}"
         
         # Upload to Supabase storage
-        result = supabase.storage.from_("career-insights-bucket").upload(
+        client = _get_supabase()
+        result = client.storage.from_("career-insights-bucket").upload(
             path=unique_filename,
             file=contents,
             file_options={"content-type": file.content_type or "image/jpeg"}
         )
-        
+
         # Get public URL
-        public_url = supabase.storage.from_("career-insights-bucket").get_public_url(unique_filename)
+        public_url = client.storage.from_("career-insights-bucket").get_public_url(unique_filename)
         
         return {
             "url": public_url,
