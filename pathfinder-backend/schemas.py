@@ -81,6 +81,11 @@ class SavedJobCreate(BaseModel):
     job_id: int
 
 
+class JobEventCreate(BaseModel):
+    job_id: int
+    event_type: str  # e.g. 'view', 'save', 'apply'
+
+
 class SavedJobResponse(BaseModel):
     id: int
     user_id: str

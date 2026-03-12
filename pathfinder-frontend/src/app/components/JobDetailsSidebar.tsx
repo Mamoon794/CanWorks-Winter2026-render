@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import type { JobPosting } from '@/types';
 import fastAxiosInstance from '@/axiosConfig/axiosfig';
@@ -10,6 +10,27 @@ interface Props {
 
 export default function JobDetailsSidebar({ job, onClose }: Props) {
     if (!job) return null;
+
+    // ensure we only send one 'view' event per job open
+    const sentRef = useRef(false);
+
+    useEffect(() => {
+        sentRef.current = false;
+    }, [job?.id]);
+
+    useEffect(() => {
+        if (!job || sentRef.current) return;
+
+        (async () => {
+            try {
+                await fastAxiosInstance.post('/api/job-events', { job_id: Number(job.id), event_type: 'view' });
+            } catch (err) {
+                // non-fatal; log for debugging
+                console.error('Failed to log job view event', err);
+            }
+            sentRef.current = true;
+        })();
+    }, [job]);
 
     return (
         <div

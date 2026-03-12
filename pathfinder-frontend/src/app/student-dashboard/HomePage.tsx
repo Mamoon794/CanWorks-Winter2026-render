@@ -4,6 +4,7 @@ import { Card } from '@/app/components/globalComponents';
 import { JobCard } from '@/app/components/JobCard';
 import { BarChart3, Bookmark, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mockJobs } from '@/data/mockData';
+import type { JobPosting } from '@/types';
 import { useSavedJobs } from '@/app/hooks/useSavedJobs';
 
 function NextArrow(props: any) {
@@ -30,7 +31,7 @@ function PrevArrow(props: any) {
   );
 }
 
-export function HomePage({ totalJobs = 0 }: { totalJobs: number }) {
+export function HomePage({ totalJobs = 0, recommendedJobs: propRecommended = undefined }: { totalJobs: number, recommendedJobs?: JobPosting[] }) {
     const { savedJobDetails, toggleSave, loading } = useSavedJobs();
 
     if (loading) {
@@ -54,7 +55,7 @@ export function HomePage({ totalJobs = 0 }: { totalJobs: number }) {
     //     });
     // };
 
-    const recommendedJobs = mockJobs.slice(0, 4);
+    const recommendedJobs = propRecommended && propRecommended.length > 0 ? propRecommended : mockJobs.slice(0, 4);
     const wildcardJobs = mockJobs.slice(4);
 
     const carouselSettings = {
