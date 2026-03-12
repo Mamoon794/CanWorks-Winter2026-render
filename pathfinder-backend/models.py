@@ -148,6 +148,59 @@ class JobDescriptionSkill(Base): # Relationship table connecting Skill and JobDe
     skill = relationship("Skill")
 
 
+class Application(Base):
+    __tablename__ = "applications"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    student_user_id = Column(String, nullable=False, index=True)
+    job_description_id = Column(UUID(as_uuid=True), ForeignKey("job_descriptions.id", ondelete="CASCADE"), nullable=False)
+    status = Column(String, default="pending")  # pending, reviewing, interview, offer, rejected, hired
+    student_name = Column(String, nullable=True)
+    student_email = Column(String, nullable=True)
+    university = Column(String, nullable=True)
+    major = Column(String, nullable=True)
+    graduation_year = Column(String, nullable=True)
+    relevant_experience = Column(Text, nullable=True)
+    resume_url = Column(String, nullable=True)
+    resume_filename = Column(String, nullable=True)
+    applied_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint("student_user_id", "job_description_id", name="unique_student_application"),
+    )
+
+    job_description = relationship("JobDescription")
+
+
+class ClickEvent(Base):
+    __tablename__ = "click_events"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String, nullable=True, index=True)
+    job_id = Column(Integer, nullable=True)
+    job_type = Column(String, nullable=True)
+    url = Column(String, nullable=False)
+    clicked_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class UserVisit(Base):
+    __tablename__ = "user_visits"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String, nullable=False, index=True)
+    visited_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class FeedLog(Base):
+    __tablename__ = "feed_logs"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    source = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    jobs_added = Column(Integer, default=0)
+    jobs_skipped = Column(Integer, default=0)
+    errors = Column(JSON, nullable=True)
+    uploaded_by = Column(String, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 class CareerInsight(Base):
     __tablename__ = "career_insights"
     id = Column(Integer, primary_key=True, autoincrement=True)

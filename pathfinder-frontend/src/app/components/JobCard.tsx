@@ -3,6 +3,7 @@ import { Card, Badge, Button } from '@/app/components/globalComponents';
 import { ExternalLink, Bookmark, BookmarkCheck, MapPin, Award } from 'lucide-react';
 import type { JobPosting } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
+import fastAxiosInstance from '@/axiosConfig/axiosfig';
 
 interface JobCardProps {
   job: JobPosting;
@@ -85,7 +86,19 @@ export function JobCard({ job, isSaved, onToggleSave }: JobCardProps) {
                 asChild
                 className="shrink-0"
             >
-                <a href={job.link_to_posting || '#'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                <a
+                    href={job.link_to_posting || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1"
+                    onClick={() => {
+                        fastAxiosInstance.post('/api/track-click', {
+                            job_id: Number(job.id) || null,
+                            job_type: job.job_type || null,
+                            url: job.link_to_posting || '',
+                        }).catch(() => {});
+                    }}
+                >
                 <ExternalLink className="w-4 h-4" />
                 {job.applySite}
                 </a>

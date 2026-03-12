@@ -88,6 +88,13 @@ export default function JobDetailsSidebar({ job, onClose }: Props) {
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded text-sm"
+                            onClick={() => {
+                                fastAxiosInstance.post('/api/track-click', {
+                                    job_id: Number(job.id) || null,
+                                    job_type: job.job_type || null,
+                                    url: job.link_to_posting || '',
+                                }).catch(() => {});
+                            }}
                         >
                             <ExternalLink className="w-4 h-4" />
                             View Posting

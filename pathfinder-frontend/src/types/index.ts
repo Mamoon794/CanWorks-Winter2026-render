@@ -189,6 +189,127 @@ export interface SkillOption {
     skill_category: string | null;
 }
 
+// Application types
+export type ApplicationStatus = 'pending' | 'reviewing' | 'interview' | 'offer' | 'rejected' | 'hired';
+
+export interface ApplicationItem {
+    id: string;
+    student_user_id: string;
+    job_description_id: string;
+    status: ApplicationStatus;
+    student_name: string | null;
+    student_email: string | null;
+    university: string | null;
+    major: string | null;
+    graduation_year: string | null;
+    relevant_experience: string | null;
+    resume_url: string | null;
+    resume_filename: string | null;
+    applied_at: string | null;
+    updated_at: string | null;
+    job_title: string | null;
+}
+
+export interface ApplicationListResponse {
+    applications: ApplicationItem[];
+    total: number;
+    page: number;
+    page_size: number;
+}
+
+// Analytics types
+export interface PipelineStats {
+    pending: number;
+    reviewing: number;
+    interview: number;
+    offer: number;
+    rejected: number;
+    hired: number;
+}
+
+export interface TopSkillItem {
+    skill_name: string;
+    count: number;
+}
+
+export interface TopUniversityItem {
+    university: string;
+    count: number;
+}
+
+export interface EmployerAnalytics {
+    total_applications: number;
+    pipeline: PipelineStats;
+    applications_per_position: number;
+    time_to_hire_days: number | null;
+    offer_acceptance_rate: number | null;
+    interview_to_hire_ratio: string | null;
+    job_status_counts: {
+        draft: number;
+        published: number;
+        expired: number;
+        deleted: number;
+    };
+    top_skills: TopSkillItem[];
+    top_universities: TopUniversityItem[];
+    total_published_jobs: number;
+}
+
+// Admin analytics types
+export interface JobsByTypeItem {
+    job_type: string;
+    count: number;
+}
+
+export interface JobsByProvinceItem {
+    province: string;
+    count: number;
+}
+
+export interface ClicksByTypeItem {
+    job_type: string;
+    clicks: number;
+}
+
+export interface UserCountItem {
+    user_type: string;
+    count: number;
+}
+
+export interface FeedLogItem {
+    id: number;
+    source: string;
+    status: string;
+    jobs_added: number;
+    jobs_skipped: number;
+    errors: string[] | null;
+    uploaded_by: string | null;
+    created_at: string | null;
+}
+
+export interface AdminAnalytics {
+    total_admin_jobs: number;
+    total_employer_jobs: number;
+    total_applications: number;
+    pipeline: PipelineStats;
+    jobs_by_type: JobsByTypeItem[];
+    jobs_by_province: JobsByProvinceItem[];
+    total_saved_jobs: number;
+    avg_saved_per_user: number;
+    top_skills: TopSkillItem[];
+    top_universities: TopUniversityItem[];
+    employer_job_status: {
+        draft: number;
+        published: number;
+        expired: number;
+        deleted: number;
+    };
+    clicks_by_type: ClicksByTypeItem[];
+    returning_visitor_rate: number | null;
+    user_counts: UserCountItem[];
+    recent_feed_logs: FeedLogItem[];
+}
+
 export interface JobDescriptionFormData {
     job_title: string;
     industry: string;
