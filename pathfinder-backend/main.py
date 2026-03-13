@@ -80,8 +80,18 @@ except Exception as e:
     logger.error(f"Failed to initialize database: {e}")
 
 def embed_text(text: str):
-    if not text or _embed_model is None:
+    global _embed_model
+    if not text:
         return None
+        
+    if _embed_model is None:
+        try:
+            logger.info("Loading embedding model lazily...")
+            _embed_model = SentenceTransformer('all-MiniLM-L6-v2')
+        except Exception as e:
+            logger.error(f"Failed to load embedding model: {e}")
+            return None
+
     try:
         vec = _embed_model.encode(text)
         return vec.tolist()
