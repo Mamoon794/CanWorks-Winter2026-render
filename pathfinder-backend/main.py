@@ -1,4 +1,6 @@
 import os
+import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi import UploadFile, File # handle file uploads
 from fastapi import Depends
@@ -26,7 +28,35 @@ from upload_images import upload_career_images
 
 from jwt_auth import verify_jwt
 
-app = FastAPI()
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Load embedding model (SentenceTransformers) once at startup
+_embed_model = None
+
+async def load_embedding_model():
+    global _embed_model
+    # Skip embedding model in production to speed up startup if needed
+    load_embeddings = os.getenv("LOAD_EMBEDDINGS", "true").lower() == "true"
+    
+    if not load_embeddings:
+        logger.info("Embeddings disabled via LOAD_EMBEDDINGS env var")
+        return
+    
+    try:
+        logger.info("Loading embedding model...")
+        _embed_model = SentenceTransformer('all-MiniLM-L6-v2')
+        logger.info("Embedding model loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load embedding model: {e}. Continuing without embeddings.")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await load_embedding_model()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 """
 Browsers block requests between different origins by default. 
 Frontend and backend can run on different ports so to the brwoser, these are different origins.
@@ -42,18 +72,27 @@ app.add_middleware(
 
 # Tell SQLAlchemy to look at all classes that inherit from Base (JobPosting model in this case)
 # and create the table in the database if it doesn't already exist
-Base.metadata.create_all(bind=engine)
-
-# Load embedding model (SentenceTransformers) once at startup
-_embed_model = SentenceTransformer('all-MiniLM-L6-v2')
+try:
+    logger.info("Initializing database...")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize database: {e}")
 
 def embed_text(text: str):
-    if not text:
+    if not text or _embed_model is None:
         return None
-    vec = _embed_model.encode(text)
-    return vec.tolist()
+    try:
+        vec = _embed_model.encode(text)
+        return vec.tolist()
+    except Exception as e:
+        logger.error(f"Failed to embed text: {e}")
+        return None
 
-# include all the routers
+# Health check endpoint for Render
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "embedding_model_loaded": _embed_model is not None}
 app.include_router(job_descriptions_router)
 app.include_router(templates_router)
 app.include_router(skills_router)
